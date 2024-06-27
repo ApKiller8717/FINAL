@@ -1,9 +1,10 @@
 <?php
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = trim($_POST["Name"]);
-    $email = trim($_POST["Email"]);
-    $phone = trim($_POST["phone"]);
-    $message = trim($_POST["message"]);
+    // Trim and sanitize input fields
+    $name = htmlspecialchars(trim($_POST["Name"]));
+    $email = htmlspecialchars(trim($_POST["Email"]));
+    $phone = htmlspecialchars(trim($_POST["phone"]));
+    $message = htmlspecialchars(trim($_POST["message"]));
 
     // Validate reCAPTCHA
     $recaptcha_secret = '6LeolQIqAAAAAONugrk_DfkceOSKpqKfZFcnxqRc';
@@ -14,6 +15,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     if (!$recaptcha_data->success) {
         echo json_encode(array('status' => 'error', 'message' => 'reCAPTCHA verification failed.'));
+        exit;
+    }
+
+    // Validate form fields
+    if (empty($name) || empty($email) || empty($phone) || empty($message)) {
+        echo json_encode(array('status' => 'error', 'message' => 'Please fill in all fields.'));
+        exit;
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(array('status' => 'error', 'message' => 'Invalid email format.'));
         exit;
     }
 

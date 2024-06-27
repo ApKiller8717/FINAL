@@ -70,7 +70,7 @@
                             <p>Whether you have a question, a suggestion, or just want to say hello, this is the place to do it. Please fill out the form below with your details and message, and we'll get back to you as soon as possible.</p>
 
                             
-                            <form name="contactForm" id="contact_form" class="position-relative z1000" method="post">
+                            <form name="contactForm" id="contact_form" class="position-relative z1000" action="send_email.php" method="post">
                                 <div class="row gx-4">
                                     <div class="col-lg-6 col-md-6 mb-3">
                                         <div class="field-set">
@@ -94,7 +94,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Replace with your reCAPTCHA site key -->
                                 <div class="g-recaptcha" data-sitekey="6LeolQIqAAAAAARxKhfwlkxpN_v2jZA09MarKzXs"></div>
                 
                                 <div id='submit' class="mt-3">
@@ -154,83 +153,75 @@
     <script src="js/plugins.js"></script>
     <script src="js/designesia.js"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <!-- <script src='../../../www.google.com/recaptcha/api.js' async defer></script> -->
     <script src="form.js"></script>
     <script src="js/restriction.js"></script>
+
+
     <script>
-        // Client-side form validation
-        function validateForm() {
-            var name = document.getElementById('name').value.trim();
-            var email = document.getElementById('email').value.trim();
-            var phone = document.getElementById('phone').value.trim();
-            var message = document.getElementById('message').value.trim();
-            
-            // Simple validation
-            if (name === '' || email === '' || phone === '' || message === '') {
-                alert('Please fill in all fields.');
-                return false;
-            }
-            
-            // Email validation using a basic regex
-            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                alert('Please enter a valid email address.');
-                return false;
-            }
-            
-            // Add more complex validation as needed (e.g., phone number format)
-            
-            return true; // Form will submit if validation passes
+    function validateForm() {
+        var name = document.getElementById('name').value.trim();
+        var email = document.getElementById('email').value.trim();
+        var phone = document.getElementById('phone').value.trim();
+        var message = document.getElementById('message').value.trim();
+        
+        if (name === '' || email === '' || phone === '' || message === '') {
+            alert('Please fill in all fields.');
+            return false;
         }
-    
-        // Handle form submission
-        $(document).ready(function() {
-            $('#contact_form').submit(function(e) {
-                e.preventDefault();
-                
-                // Perform client-side validation
-                if (!validateForm()) {
-                    return;
-                }
-    
-                // Verify reCAPTCHA
-                var recaptcha_response = grecaptcha.getResponse();
-                if (recaptcha_response.length === 0) {
-                    alert('Please complete the reCAPTCHA.');
-                    return;
-                }
-    
-                // Disable submit button to prevent multiple submissions
-                $('#send_message').attr('disabled', true);
-    
-                // Submit the form via AJAX
-                $.ajax({
-                    url: 'send_email.php', // Replace with your PHP script path
-                    type: 'POST',
-                    data: $('#contact_form').serialize(),
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            $('#success_message').show();
-                            $('#error_message').hide();
-                            $('#contact_form')[0].reset(); // Reset form after successful submission
-                        } else {
-                            $('#error_message').text(response.message).show();
-                            $('#success_message').hide();
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText);
-                        $('#error_message').text('Error occurred. Please try again later.').show();
+        
+        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Please enter a valid email address.');
+            return false;
+        }
+        
+        return true;
+    }
+
+    // Handle form submission
+    $(document).ready(function() {
+        $('#contact_form').submit(function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+
+            var recaptcha_response = grecaptcha.getResponse();
+            if (recaptcha_response.length === 0) {
+                alert('Please complete the reCAPTCHA.');
+                return;
+            }
+
+            $('#send_message').attr('disabled', true);
+
+            $.ajax({
+                url: 'send_email.php', 
+                type: 'POST',
+                data: $('#contact_form').serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $('#success_message').show();
+                        $('#error_message').hide();
+                        $('#contact_form')[0].reset(); 
+                    } else {
+                        $('#error_message').text(response.message).show();
                         $('#success_message').hide();
-                    },
-                    complete: function() {
-                        $('#send_message').attr('disabled', false); // Re-enable submit button
                     }
-                });
+                },
+                error: function(xhr, status, error) {
+                    console.error(xhr.responseText);
+                    $('#error_message').text('Error occurred. Please try again later.').show();
+                    $('#success_message').hide();
+                },
+                complete: function() {
+                    $('#send_message').attr('disabled', false); 
+                }
             });
         });
-    </script>
+    });
+</script>
 
 </body>
 
