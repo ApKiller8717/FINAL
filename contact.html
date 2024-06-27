@@ -61,44 +61,42 @@
                             <p>Whether you have a question, a suggestion, or just want to say hello, this is the place to do it. Please fill out the form below with your details and message, and we'll get back to you as soon as possible.</p>
 
                             
-                            <form name="contactForm" id="contact_form" class="position-relative z1000" method="post" action="#">
+                            <form name="contactForm" id="contact_form" class="position-relative z1000" method="post">
                                 <div class="row gx-4">
-                                    <div class="col-lg-6 col-md-6 mb10">
+                                    <div class="col-lg-6 col-md-6 mb-3">
                                         <div class="field-set">
                                             <span class="d-label fw-bold">Name</span>
                                             <input type="text" name="Name" id="name" class="form-control no-border" placeholder="Your Name" required>
                                         </div>
-
                                         <div class="field-set">
                                             <span class="d-label fw-bold">Email</span>
-                                            <input type="text" name="Email" id="email" class="form-control no-border" placeholder="Your Email" required>
+                                            <input type="email" name="Email" id="email" class="form-control no-border" placeholder="Your Email" required>
                                         </div>
-
                                         <div class="field-set">
                                             <span class="d-label fw-bold">Phone</span>
                                             <input type="text" name="phone" id="phone" class="form-control no-border" placeholder="Your Phone" required>
                                         </div>
                                     </div>
-                                    
                                     <div class="col-lg-6 col-md-6">
-                                        <div class="field-set mb20">
+                                        <div class="field-set mb-3">
                                             <span class="d-label fw-bold">Message</span>
                                             <textarea name="message" id="message" class="form-control no-border" placeholder="Your Message" required></textarea>
                                         </div>
                                     </div>
                                 </div>
-                                    
                                 
-                                <div class="g-recaptcha" data-sitekey="6LdW03QgAAAAAJko8aINFd1eJUdHlpvT4vNKakj6"></div>
-                                <div id='submit' class="mt20">
+                                <!-- Replace with your reCAPTCHA site key -->
+                                <div class="g-recaptcha" data-sitekey="YOUR_RECAPTCHA_SITE_KEY"></div>
+                
+                                <div id='submit' class="mt-3">
                                     <input type='submit' id='send_message' value='Send Message' class="btn-main btn-line">
                                 </div>
-
-                                <div id="success_message" class='success'>
+                
+                                <div id="success_message" class="mt-3 success" style="display:none;">
                                     Your message has been sent successfully. Refresh this page if you want to send more messages.
                                 </div>
-                                <div id="error_message" class='error'>
-                                    Sorry there was an error sending your form.
+                                <div id="error_message" class="mt-3 error" style="display:none;">
+                                    Sorry, there was an error sending your message.
                                 </div>
                             </form>
 
@@ -146,9 +144,84 @@
     ================================================== -->
     <script src="js/plugins.js"></script>
     <script src="js/designesia.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <!-- <script src='../../../www.google.com/recaptcha/api.js' async defer></script> -->
     <script src="form.js"></script>
     <script src="js/restriction.js"></script>
+    <script>
+        // Client-side form validation
+        function validateForm() {
+            var name = document.getElementById('name').value.trim();
+            var email = document.getElementById('email').value.trim();
+            var phone = document.getElementById('phone').value.trim();
+            var message = document.getElementById('message').value.trim();
+            
+            // Simple validation
+            if (name === '' || email === '' || phone === '' || message === '') {
+                alert('Please fill in all fields.');
+                return false;
+            }
+            
+            // Email validation using a basic regex
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address.');
+                return false;
+            }
+            
+            // Add more complex validation as needed (e.g., phone number format)
+            
+            return true; // Form will submit if validation passes
+        }
+    
+        // Handle form submission
+        $(document).ready(function() {
+            $('#contact_form').submit(function(e) {
+                e.preventDefault();
+                
+                // Perform client-side validation
+                if (!validateForm()) {
+                    return;
+                }
+    
+                // Verify reCAPTCHA
+                var recaptcha_response = grecaptcha.getResponse();
+                if (recaptcha_response.length === 0) {
+                    alert('Please complete the reCAPTCHA.');
+                    return;
+                }
+    
+                // Disable submit button to prevent multiple submissions
+                $('#send_message').attr('disabled', true);
+    
+                // Submit the form via AJAX
+                $.ajax({
+                    url: 'send_email.php', // Replace with your PHP script path
+                    type: 'POST',
+                    data: $('#contact_form').serialize(),
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            $('#success_message').show();
+                            $('#error_message').hide();
+                            $('#contact_form')[0].reset(); // Reset form after successful submission
+                        } else {
+                            $('#error_message').text(response.message).show();
+                            $('#success_message').hide();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                        $('#error_message').text('Error occurred. Please try again later.').show();
+                        $('#success_message').hide();
+                    },
+                    complete: function() {
+                        $('#send_message').attr('disabled', false); // Re-enable submit button
+                    }
+                });
+            });
+        });
+    </script>
 
 </body>
 
