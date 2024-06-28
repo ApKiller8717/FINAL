@@ -1,58 +1,51 @@
 <?php
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Sanitize input data
-    $name = htmlspecialchars(strip_tags(trim($_POST["Name"])));
-    $email = filter_var(trim($_POST["Email"]), FILTER_SANITIZE_EMAIL);
-    $phone = htmlspecialchars(strip_tags(trim($_POST["phone"])));
-    $message = htmlspecialchars(strip_tags(trim($_POST["message"])));
-    $recaptcha_response = $_POST['g-recaptcha-response'];
+    $name = htmlspecialchars(trim($_POST["Name"]));
+    $email = htmlspecialchars(trim($_POST["Email"]));
+    $phone = htmlspecialchars(trim($_POST["phone"]));
+    $message = htmlspecialchars(trim($_POST["message"]));
 
-    // Validate input data
-    if (empty($name) || empty($email) || empty($phone) || empty($message) || empty($recaptcha_response)) {
-        echo json_encode(["status" => "error", "message" => "Please fill in all fields."]);
+    if (empty($name) || empty($email) || empty($phone) || empty($message)) {
+        echo json_encode(["status" => "error", "message" => "All fields are required."]);
         exit;
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        echo json_encode(["status" => "error", "message" => "Please enter a valid email address."]);
+        echo json_encode(["status" => "error", "message" => "Invalid email address."]);
         exit;
     }
 
-    // Verify reCAPTCHA
-    $recaptcha_secret = "6LeolQIqAAAAAONugrk_DfkceOSKpqKfZFcnxqRc";
-    $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
-    $recaptcha_data = [
-        'secret' => $recaptcha_secret,
-        'response' => $recaptcha_response
+    $mailtrap_api_token = "d87340bac006fec31ec1aeb734e46a5f";
+    $mailtrap_inbox_email = "ankitpanchal8717@gmail.com";
+
+    $postData = [
+        "from" => ["email" => "mailtrap@ankitpanchal.online", "name" => "Mailtrap Test"],
+        "to" => [["email" => $mailtrap_inbox_email]],
+        "subject" => "New Contact Form Submission",
+        "text" => "Name: $name\nEmail: $email\nPhone: $phone\nMessage: $message",
+        "category" => "Contact Form"
     ];
 
-    $options = [
-        'http' => [
-            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-            'method'  => 'POST',
-            'content' => http_build_query($recaptcha_data)
-        ]
-    ];
-    $context  = stream_context_create($options);
-    $recaptcha_verify = file_get_contents($recaptcha_url, false, $context);
-    $recaptcha_success = json_decode($recaptcha_verify);
+    $ch = curl_init('https://send.api.mailtrap.io/api/send');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $mailtrap_api_token,
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
 
-    if (!$recaptcha_success->success) {
-        echo json_encode(["status" => "error", "message" => "reCAPTCHA verification failed."]);
-        exit;
-    }
+    $response = curl_exec($ch);
+    $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-    // Email settings
-    $to = "ankitpanchal8717@gmail.com";
-    $subject = "New Contact Form Submission from $name";
-    $email_message = "Name: $name\nEmail: $email\nPhone: $phone\n\nMessage:\n$message";
-    $headers = "From: $email";
+    curl_close($ch);
 
-    // Send email
-    if (mail($to, $subject, $email_message, $headers)) {
-        echo json_encode(["status" => "success", "message" => "Your message has been sent successfully."]);
+    if ($responseCode == 200) {
+        echo json_encode(["status" => "success"]);
     } else {
-        echo json_encode(["status" => "error", "message" => "There was an error sending your message."]);
+        echo json_encode(["status" => "error", "message" => "Failed to send email."]);
     }
+} else {
+    echo json_encode(["status" => "error", "message" => "Invalid request method."]);
 }
 ?>
