@@ -1,46 +1,58 @@
 <?php
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Trim and sanitize input fields
-    $name = htmlspecialchars(trim($_POST["Name"]));
-    $email = htmlspecialchars(trim($_POST["Email"]));
-    $phone = htmlspecialchars(trim($_POST["phone"]));
-    $message = htmlspecialchars(trim($_POST["message"]));
-
-    // Validate reCAPTCHA
-    $recaptcha_secret = '6LeolQIqAAAAAONugrk_DfkceOSKpqKfZFcnxqRc';
+    // Sanitize input data
+    $name = htmlspecialchars(strip_tags(trim($_POST["Name"])));
+    $email = filter_var(trim($_POST["Email"]), FILTER_SANITIZE_EMAIL);
+    $phone = htmlspecialchars(strip_tags(trim($_POST["phone"])));
+    $message = htmlspecialchars(strip_tags(trim($_POST["message"])));
     $recaptcha_response = $_POST['g-recaptcha-response'];
-    $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
-    $recaptcha = file_get_contents($recaptcha_url . '?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
-    $recaptcha_data = json_decode($recaptcha);
-    
-    if (!$recaptcha_data->success) {
-        echo json_encode(array('status' => 'error', 'message' => 'reCAPTCHA verification failed.'));
-        exit;
-    }
 
-    // Validate form fields
-    if (empty($name) || empty($email) || empty($phone) || empty($message)) {
-        echo json_encode(array('status' => 'error', 'message' => 'Please fill in all fields.'));
+    // Validate input data
+    if (empty($name) || empty($email) || empty($phone) || empty($message) || empty($recaptcha_response)) {
+        echo json_encode(["status" => "error", "message" => "Please fill in all fields."]);
         exit;
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        echo json_encode(array('status' => 'error', 'message' => 'Invalid email format.'));
+        echo json_encode(["status" => "error", "message" => "Please enter a valid email address."]);
         exit;
     }
 
-    // Send email
+    // Verify reCAPTCHA
+    $recaptcha_secret = "6LeolQIqAAAAAONugrk_DfkceOSKpqKfZFcnxqRc";
+    $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
+    $recaptcha_data = [
+        'secret' => $recaptcha_secret,
+        'response' => $recaptcha_response
+    ];
+
+    $options = [
+        'http' => [
+            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method'  => 'POST',
+            'content' => http_build_query($recaptcha_data)
+        ]
+    ];
+    $context  = stream_context_create($options);
+    $recaptcha_verify = file_get_contents($recaptcha_url, false, $context);
+    $recaptcha_success = json_decode($recaptcha_verify);
+
+    if (!$recaptcha_success->success) {
+        echo json_encode(["status" => "error", "message" => "reCAPTCHA verification failed."]);
+        exit;
+    }
+
+    // Email settings
     $to = "ankitpanchal8717@gmail.com";
-    $subject = "New Contact Form Submission";
-    $message_body = "Name: $name\nEmail: $email\nPhone: $phone\n\n$message";
+    $subject = "New Contact Form Submission from $name";
+    $email_message = "Name: $name\nEmail: $email\nPhone: $phone\n\nMessage:\n$message";
     $headers = "From: $email";
 
-    if (mail($to, $subject, $message_body, $headers)) {
-        echo json_encode(array('status' => 'success', 'message' => 'Your message has been sent successfully.'));
+    // Send email
+    if (mail($to, $subject, $email_message, $headers)) {
+        echo json_encode(["status" => "success", "message" => "Your message has been sent successfully."]);
     } else {
-        echo json_encode(array('status' => 'error', 'message' => 'Failed to send your message. Please try again later.'));
+        echo json_encode(["status" => "error", "message" => "There was an error sending your message."]);
     }
-} else {
-    echo json_encode(array('status' => 'error', 'message' => 'Method not allowed.'));
 }
 ?>

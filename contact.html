@@ -159,70 +159,71 @@
 
 
     <script>
-    function validateForm() {
-        var name = document.getElementById('name').value.trim();
-        var email = document.getElementById('email').value.trim();
-        var phone = document.getElementById('phone').value.trim();
-        var message = document.getElementById('message').value.trim();
-        
-        if (name === '' || email === '' || phone === '' || message === '') {
-            alert('Please fill in all fields.');
-            return false;
-        }
-        
-        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            alert('Please enter a valid email address.');
-            return false;
-        }
-        
-        return true;
-    }
-
-    // Handle form submission
-    $(document).ready(function() {
-        $('#contact_form').submit(function(e) {
-            e.preventDefault();
+        function validateForm() {
+            var name = document.getElementById('name').value.trim();
+            var email = document.getElementById('email').value.trim();
+            var phone = document.getElementById('phone').value.trim();
+            var message = document.getElementById('message').value.trim();
             
-            if (!validateForm()) {
-                return;
+            if (name === '' || email === '' || phone === '' || message === '') {
+                alert('Please fill in all fields.');
+                return false;
             }
-
-            var recaptcha_response = grecaptcha.getResponse();
-            if (recaptcha_response.length === 0) {
-                alert('Please complete the reCAPTCHA.');
-                return;
+            
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address.');
+                return false;
             }
-
-            $('#send_message').attr('disabled', true);
-
-            $.ajax({
-                url: 'send_email.php', 
-                type: 'POST',
-                data: $('#contact_form').serialize(),
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        $('#success_message').show();
-                        $('#error_message').hide();
-                        $('#contact_form')[0].reset(); 
-                    } else {
-                        $('#error_message').text(response.message).show();
-                        $('#success_message').hide();
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error(xhr.responseText);
-                    $('#error_message').text('Error occurred. Please try again later.').show();
-                    $('#success_message').hide();
-                },
-                complete: function() {
-                    $('#send_message').attr('disabled', false); 
+            
+            return true;
+        }
+        
+        // Handle form submission
+        $(document).ready(function() {
+            $('#contact_form').submit(function(e) {
+                e.preventDefault();
+                
+                if (!validateForm()) {
+                    return;
                 }
+        
+                var recaptcha_response = grecaptcha.getResponse();
+                if (recaptcha_response.length === 0) {
+                    alert('Please complete the reCAPTCHA.');
+                    return;
+                }
+        
+                $('#send_message').attr('disabled', true);
+        
+                $.ajax({
+                    url: 'send_email.php', 
+                    type: 'POST',
+                    data: $('#contact_form').serialize(),
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            $('#success_message').show();
+                            $('#error_message').hide();
+                            $('#contact_form')[0].reset(); 
+                        } else {
+                            $('#error_message').text(response.message).show();
+                            $('#success_message').hide();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                        $('#error_message').text('Error occurred. Please try again later.').show();
+                        $('#success_message').hide();
+                    },
+                    complete: function() {
+                        $('#send_message').attr('disabled', false); 
+                    }
+                });
             });
         });
-    });
-</script>
+        </script>
+        
 
 </body>
 
